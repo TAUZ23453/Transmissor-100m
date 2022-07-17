@@ -1,46 +1,24 @@
-//Transmissor
+//Receptor
 
 #include <SPI.h>
 #include <nRF24L01.h>
 #include <RF24.h>
-#include <SD.h>
-File myFile;
-long envio = 0;
-
-
-RF24 radio(A0, A1); // CE, CSN, PINOS DE SELEÇÃO DO SLAVE
+RF24 radio(A0, A1); // CE, CSN
 const byte address[6] = "00001";
+long envio = 0;
 
 void setup() {
   Serial.begin(9600);
-  radio.begin();  // INICIAÇÃO DO CHIP
-  radio.openWritingPipe(address);
+  Serial.println("iniciando");
+  radio.begin();
+  radio.openReadingPipe(0, address);
   radio.setPALevel(RF24_PA_MIN);
-  radio.stopListening(); // CONFIGURAÇÃO PARA RECEPTOR
-  
-  Serial.print("Inicializando SD card");
-  
-  if (!SD.begin(10)) {  // Verificação do cartão slave
-    Serial.println("Falha!");
-    while (1);
-  }
-  Serial.println("Sucesso.");
-  myFile = SD.open("test.txt"); // Abertura do arquivo teste com 500kB
-  
-  if (myFile) {
-    Serial.println("test.txt:");
-
-    while (myFile.available()) {
-      envio = myFile.parseInt();   // Armazenamento do arquivo contido no cartão SD antes do envio
-    }
-    myFile.close();                // Fechamento do arquivo
-  } 
-  else {
-    Serial.println("error opening test.txt");
-  }
+  radio.startListening();
 }
-
 void loop() {
-  radio.write(&envio, sizeof(envio)); // Envio do arquivo contido na variavel "envio"
-  delay(100);
+  if (radio.available()) {
+    
+    radio.read(&envio, sizeof(envio));
+    Serial.println(envio);
+  }
 }
