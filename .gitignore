@@ -1,32 +1,46 @@
-# Prerequisites
-*.d
+//Transmissor
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+#include <SD.h>
+File myFile;
+long envio = 0;
 
-# Precompiled Headers
-*.gch
-*.pch
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+RF24 radio(A0, A1); // CE, CSN, PINOS DE SELEÇÃO DO SLAVE
+const byte address[6] = "00001";
 
-# Fortran module files
-*.mod
-*.smod
+void setup() {
+  Serial.begin(9600);
+  radio.begin();  // INICIAÇÃO DO CHIP
+  radio.openWritingPipe(address);
+  radio.setPALevel(RF24_PA_MIN);
+  radio.stopListening(); // CONFIGURAÇÃO PARA RECEPTOR
+  
+  Serial.print("Inicializando SD card");
+  
+  if (!SD.begin(10)) {  // Verificação do cartão slave
+    Serial.println("Falha!");
+    while (1);
+  }
+  Serial.println("Sucesso.");
+  myFile = SD.open("test.txt"); // Abertura do arquivo teste com 500kB
+  
+  if (myFile) {
+    Serial.println("test.txt:");
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+    while (myFile.available()) {
+      envio = myFile.parseInt();   // Armazenamento do arquivo contido no cartão SD antes do envio
+    }
+    myFile.close();                // Fechamento do arquivo
+  } 
+  else {
+    Serial.println("error opening test.txt");
+  }
+}
 
-# Executables
-*.exe
-*.out
-*.app
+void loop() {
+  radio.write(&envio, sizeof(envio)); // Envio do arquivo contido na variavel "envio"
+  delay(100);
+}
